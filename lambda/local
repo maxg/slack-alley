@@ -1,0 +1,17 @@
+#!/bin/bash
+
+while read -r var eq val; do
+  export "`echo $var | tr [:lower:] [:upper:]`=`echo ${val:1:-1}`"
+done < setup/terraform.auto.tfvars
+
+while read -r var eq val; do
+  eval "`echo $var | tr [:lower:] [:upper:]`=`echo ${val:1:-1}`"
+done < setup/terraform.tfvars
+
+export AWS_REGION="$REGION"
+export AWS_ACCESS_KEY_ID="$ACCESS_KEY"
+export AWS_SECRET_ACCESS_KEY="$SECRET_KEY"
+
+export DATA_TABLE=slack-alley-data
+
+node $@

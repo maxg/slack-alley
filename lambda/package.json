@@ -1,0 +1,13 @@
+{
+  "name": "slack-alley-lambda",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@slack/client": "^4.8.0",
+    "html2plaintext": "^2.1.2"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.395.0"
+  },
+  "engines": {}
+}

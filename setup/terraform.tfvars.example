@@ -1,0 +1,5 @@
+bucket = "...-terraform-state"
+key = "slack-alley"
+region = "us-east-1"
+access_key = "..."
+secret_key = "..."

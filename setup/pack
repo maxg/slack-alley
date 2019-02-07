@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -e
+
+cd "$(dirname "${BASH_SOURCE[0]}")"/../lambda
+
+revision=$1
+prefix=../out/lambda-`date +%y%m%d%H%M`-
+
+if [[ "$revision" == "--working" ]]; then
+  revision=`git rev-parse --quiet --short HEAD || echo 0000000`-wip
+  (
+    git ls-files # Only pack files that are tracked by Git
+    npm ls --production --parseable --silent | grep -o 'node_modules/.*'
+  ) | xargs zip -qr $prefix$revision.zip
+
+elif git rev-parse --quiet --verify $revision > /dev/null; then
+  revision=`git rev-parse --short $revision`
+  git archive -o $prefix$revision.zip $revision .
+  (
+    npm ls --production --parseable --silent | grep -o 'node_modules/.*' # XXX no, do correct `npm install` in tmpdir
+  ) | xargs zip -qr $prefix$revision.zip
+
+else
+  echo "First argument must be a revision or --working"
+  exit 1
+fi
