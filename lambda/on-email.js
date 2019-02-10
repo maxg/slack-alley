@@ -25,24 +25,27 @@ const lambda_handler = exports.handler = (event, context, callback) => {
       const dbkey = { cid: { S: content.id }, key: { S: 'ts' } };
       db.getItem({ Key: dbkey }, (err, data) => {
         if (err) { throw err; }
+        
+        const attachments = piazza.to_slack(content);
+        
         if (data && data.Item) {
           
-          slack.chat.update({
+          attachments.then((attachments) => slack.chat.update({
             channel: SLACK_CHANNEL,
             ts: data.Item.val.S,
-            attachments: piazza.to_slack(content),
-          }).then(res => {
+            attachments,
+          })).then((res) => {
             if ( ! res.ok) { throw new Error(res.error); }
             callback();
           });
           
         } else {
           
-          slack.chat.postMessage({
+          attachments.then((attachments) => slack.chat.postMessage({
             channel: SLACK_CHANNEL,
             username: 'piazza',
-            attachments: piazza.to_slack(content),
-          }).then(res => {
+            attachments,
+          })).then((res) => {
             if ( ! res.ok) { throw new Error(res.error); }
             db.updateItem({
               Key: dbkey,
