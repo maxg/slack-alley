@@ -122,7 +122,7 @@ const to_slack = exports.to_slack = (nid, network_get_users, content) => {
 };
 
 const _excerpt = (html) => {
-  return html2plaintext(html).replace(/(\s*\n)+/g,'\n').replace(/((\w+\W+){0,30})(.*)/s, (all, first, _, rest) => {
+  return html2plaintext(html).replace(/(\s*\n)+/g,'\n').replace(/(\W*(\w+\W+){0,30})(.*)/s, (all, first, _, rest) => {
     const more = (rest.match(/\w\b/g) || []).length;
     return first + (more > 10 ? ` _...${more} words..._` : rest);
   });
