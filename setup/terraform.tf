@@ -103,7 +103,7 @@ resource "aws_ses_receipt_rule_set" "rules" {
 resource "aws_ses_receipt_rule" "receive" {
   name = "${local.name}-receive"
   rule_set_name = "${aws_ses_receipt_rule_set.rules.rule_set_name}"
-  recipients = ["${var.email}"]
+  recipients = ["${aws_ses_domain_identity.domain.domain}"]
   enabled = true
   # s3_action {
   #   bucket_name = "${aws_s3_bucket.emails.bucket}"
