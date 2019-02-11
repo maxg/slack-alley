@@ -67,9 +67,8 @@ const to_slack = exports.to_slack = (nid, network_get_users, content) => {
     const attachments = [];
     // XXX TODO is it a question or a note
     if (content.history.length) {
-      const question = content.history[content.history.length-1];
-      const title = _excerpt(question.subject);
-      const text = _excerpt(question.content);
+      const title = _excerpt(content.history[0].subject);
+      const text = _excerpt(content.history[0].content);
       const authors = _authors(content.history, users);
       attachments.push({
         fallback: `@${content.nr}: ${title} (${authors})\n${text}`,
@@ -79,8 +78,7 @@ const to_slack = exports.to_slack = (nid, network_get_users, content) => {
       });
     }
     if (student_answer && student_answer.history.length) {
-      const answer = student_answer.history[student_answer.history.length-1];
-      const text = _excerpt(answer.content);
+      const text = _excerpt(student_answer.history[0].content);
       const authors = _authors(student_answer.history, users);
       attachments.push({
         fallback: `Student Answer (${authors}): ${text}`,
@@ -90,8 +88,7 @@ const to_slack = exports.to_slack = (nid, network_get_users, content) => {
       });
     }
     if (instructor_answer && instructor_answer.history.length) {
-      const answer = instructor_answer.history[instructor_answer.history.length-1];
-      const text = _excerpt(answer.content);
+      const text = _excerpt(instructor_answer.history[0].content);
       const authors = _authors(instructor_answer.history, users);
       attachments.push({
         fallback: `Instructor Answer (${authors}): ${text}`,
