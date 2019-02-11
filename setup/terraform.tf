@@ -9,8 +9,9 @@ variable "piazza_class" {}
 variable "slack_token" {}
 variable "slack_channel" {}
 
+# terraform init -backend-config=terraform.tfvars
 terraform {
-  
+  backend "s3" {}
 }
 
 locals {
