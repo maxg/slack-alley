@@ -67,12 +67,13 @@ const to_slack = exports.to_slack = (nid, network_get_users, content) => {
     const attachments = [];
     // XXX TODO is it a question or a note
     if (content.history.length) {
+      const private = content.status === 'private';
       const title = _excerpt(content.history[0].subject);
       const text = _excerpt(content.history[0].content);
       const authors = _authors(content.history, users);
       attachments.push({
-        fallback: `@${content.nr}: ${title} (${authors})\n${text}`,
-        pretext: `*<https://piazza.com/class/${nid}?cid=${content.nr}|@${content.nr}: ${title}>* (${authors})`,
+        fallback: `@${content.nr}: ${title} ${private ? '[private] ' : ''}(${authors})\n${text}`,
+        pretext: `*<https://piazza.com/class/${nid}?cid=${content.nr}|@${content.nr}: ${title}>* ${private ? 'ᵖʳⁱᵛᵃᵗᵉ ' : ''}(${authors})`,
         color: '#8dc63f', // XXX is the poster a student?
         text,
       });
