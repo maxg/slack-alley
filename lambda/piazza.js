@@ -2,6 +2,8 @@ const https = require('https');
 
 const html2plaintext = require('html2plaintext');
 
+const { USER_INFO } = process.env;
+
 const post = (cookie, method, params) => new Promise((resolve, reject) => {
   
   const nonce = (+new Date()).toString(36) + 'abcd';
@@ -73,7 +75,7 @@ const to_slack = exports.to_slack = (nid, network_get_users, content) => {
       const authors = _authors(content.history, users);
       attachments.push({
         fallback: `@${content.nr}: ${title} ${private ? '[private] ' : ''}(${authors})\n${text}`,
-        pretext: `*<https://piazza.com/class/${nid}?cid=${content.nr}|@${content.nr}: ${title}>* ${private ? 'ᵖʳⁱᵛᵃᵗᵉ ' : ''}(${authors})`,
+        pretext: `*<https://piazza.com/class/${nid}?cid=${content.nr}|@${content.nr}: ${title}>* ${private ? 'ᵖʳⁱᵛᵃᵗᵉ ' : ''}(${_link_usernames(authors)})`,
         color: '#8dc63f', // XXX is the poster a student?
         text,
       });
@@ -83,7 +85,7 @@ const to_slack = exports.to_slack = (nid, network_get_users, content) => {
       const authors = _authors(student_answer.history, users);
       attachments.push({
         fallback: `Student Answer (${authors}): ${text}`,
-        pretext: `Student Answer (${authors})`,
+        pretext: `Student Answer (${_link_usernames(authors)})`,
         color: '#8dc63f',
         text,
       });
@@ -93,7 +95,7 @@ const to_slack = exports.to_slack = (nid, network_get_users, content) => {
       const authors = _authors(instructor_answer.history, users);
       attachments.push({
         fallback: `Instructor Answer (${authors}): ${text}`,
-        pretext: `Instructor Answer (${authors})`,
+        pretext: `Instructor Answer (${_link_usernames(authors)})`,
         color: '#faae40',
         text,
       });
@@ -103,7 +105,7 @@ const to_slack = exports.to_slack = (nid, network_get_users, content) => {
       const authors = _authors([ followup, ...followup.children ].reverse(), users);
       attachments.push({
         fallback: `Discussion (${authors}): ${text}`,
-        pretext: `Discussion (${authors})`,
+        pretext: `Discussion (${_link_usernames(authors)})`,
         text,
       });
       followup.children.forEach((reply) => {
@@ -129,5 +131,9 @@ const _excerpt = (html) => {
 const _authors = (arr, users) => arr.map(({ uid }) => uid).reverse().filter((uid, idx, arr) => {
   return arr.indexOf(uid) === idx;
 }).map((uid) => users.find((user) => user.id === uid)).map((user) => {
-  return user ? user.email.replace('@mit.edu', '') : 'unknown';
+  return user ? user.email.replace('@mit.edu', '') : '*unknown*';
+}).join(', ');
+
+const _link_usernames = (users) => users.split(', ').map((username) => {
+  return /\W/.test(username) ? username : `<${USER_INFO}${username}|${username}>`;
 }).join(', ');

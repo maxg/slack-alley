@@ -8,6 +8,7 @@ variable "piazza_password" {}
 variable "piazza_class" {}
 variable "slack_token" {}
 variable "slack_channel" {}
+variable "user_info" {}
 
 # terraform init -backend-config=terraform.tfvars
 terraform {
@@ -84,6 +85,7 @@ resource "aws_lambda_function" "functions" {
       PIAZZA_CLASS = "${var.piazza_class}"
       SLACK_TOKEN = "${var.slack_token}" # XXX TODO secret
       SLACK_CHANNEL = "${var.slack_channel}"
+      USER_INFO = "${var.user_info}"
     }
   }
   tags { Terraform = "${local.name}" }
