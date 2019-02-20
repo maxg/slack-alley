@@ -34,6 +34,8 @@ provider "aws" {
   region = "${var.region}"
 }
 
+data "aws_caller_identity" "current" {}
+
 resource "aws_s3_bucket" "emails" {
   bucket = "${local.name}-emails"
   acl = "private"
@@ -148,6 +150,10 @@ resource "aws_iam_role" "lambda" {
 
 data "aws_iam_policy_document" "lambda" {
   statement {
+    actions = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+    resources = ["arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:*"]
+  }
+  statement {
     actions = ["dynamodb:*"]
     resources = ["${aws_dynamodb_table.data.arn}"]
   }
@@ -157,6 +163,13 @@ resource "aws_iam_role_policy" "lambda" {
   name = "${local.name}-lambda-policy"
   role = "${aws_iam_role.lambda.id}"
   policy = "${data.aws_iam_policy_document.lambda.json}"
+}
+
+resource "aws_cloudwatch_log_group" "logs" {
+  count = "${length(local.lambda_functions)}"
+  name = "/aws/lambda/${aws_lambda_function.functions.*.function_name[count.index]}"
+  retention_in_days = 1
+  tags { Terraform = "${local.name}" }
 }
 
 output "ses-domain-verification" {
