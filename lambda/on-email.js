@@ -37,7 +37,7 @@ const lambda_handler = exports.handler = (event, context, callback) => {
   
   const notification = event.Records[0].ses;
   
-  const recipient = notification.mail.commonHeaders.to;
+  const recipient = notification.mail.commonHeaders.to[0];
   const course = recipient.split('@')[0];
   const messageID = notification.mail.commonHeaders.messageId;
   
