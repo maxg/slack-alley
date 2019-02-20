@@ -73,6 +73,8 @@ resource "aws_lambda_function" "functions" {
   runtime = "nodejs8.10"
   handler = "${element(local.lambda_functions, count.index)}.handler"
   role = "${aws_iam_role.lambda.arn}"
+  timeout = 4
+  reserved_concurrent_executions = 1
   depends_on = ["aws_iam_role_policy.lambda"]
   environment {
     variables = {
