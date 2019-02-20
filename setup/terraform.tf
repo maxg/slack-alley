@@ -3,12 +3,7 @@ variable "access_key" {}
 variable "secret_key" {}
 variable "region" {}
 
-variable "email" {}
-variable "piazza_password" {}
-variable "piazza_class" {}
-variable "slack_token" {}
-variable "slack_channel" {}
-variable "user_info" {}
+variable "domain" {}
 
 # terraform init -backend-config=terraform.tfvars
 terraform {
@@ -80,19 +75,13 @@ resource "aws_lambda_function" "functions" {
   environment {
     variables = {
       DATA_TABLE = "${aws_dynamodb_table.data.name}"
-      EMAIL = "${var.email}"
-      PIAZZA_PASSWORD = "${var.piazza_password}" # XXX TODO secret
-      PIAZZA_CLASS = "${var.piazza_class}"
-      SLACK_TOKEN = "${var.slack_token}" # XXX TODO secret
-      SLACK_CHANNEL = "${var.slack_channel}"
-      USER_INFO = "${var.user_info}"
     }
   }
   tags { Terraform = "${local.name}" }
 }
 
 resource "aws_ses_domain_identity" "domain" {
-  domain = "${element(split("@", var.email), 1)}"
+  domain = "${var.domain}"
 }
 
 resource "aws_ses_active_receipt_rule_set" "main" {

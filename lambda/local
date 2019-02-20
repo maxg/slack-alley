@@ -1,10 +1,6 @@
 #!/bin/bash
 
 while read -r var eq val; do
-  export "`echo $var | tr [:lower:] [:upper:]`=`echo ${val:1:-1}`"
-done < setup/terraform.auto.tfvars
-
-while read -r var eq val; do
   eval "`echo $var | tr [:lower:] [:upper:]`=`echo ${val:1:-1}`"
 done < setup/terraform.tfvars
 
