@@ -94,10 +94,11 @@ const to_slack = exports.to_slack = (nid, post_with_cookie, content, config) => 
       const title = _excerpt(content.history[0].subject);
       const text = _excerpt(content.history[0].content);
       const authors = _authors(content.history, users, config.user_info.S);
+      const student = users[content.history[0].uid].role === 'student';
       attachments.push({
         fallback: `@${content.nr}: ${title} ${private ? '[private] ' : ''}(${authors.map(a => a.username).join(', ')})\n${text}`,
         pretext: `*<https://piazza.com/class/${nid}?cid=${content.nr}|@${content.nr}: ${title}>* ${private ? 'ᵖʳⁱᵛᵃᵗᵉ ' : ''}(${authors.map(a => a.link).join(', ')})`,
-        color: '#8dc63f', // XXX is the poster a student?
+        color: student ? '#8dc63f' : '#faae40',
         text,
       });
     }
