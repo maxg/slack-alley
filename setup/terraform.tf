@@ -39,6 +39,11 @@ data "aws_caller_identity" "current" {}
 resource "aws_s3_bucket" "emails" {
   bucket = "${local.name}-emails"
   acl = "private"
+  lifecycle_rule {
+    id = "${local.name}-emails-expiration-rule"
+    enabled = true
+    expiration { days = 1 }
+  }
   tags { Terraform = "${local.name}" }
 }
 
@@ -101,14 +106,14 @@ resource "aws_ses_receipt_rule" "receive" {
   rule_set_name = "${aws_ses_receipt_rule_set.rules.rule_set_name}"
   recipients = ["${aws_ses_domain_identity.domain.domain}"]
   enabled = true
-  # s3_action {
-  #   bucket_name = "${aws_s3_bucket.emails.bucket}"
-  #   position = 1
-  # }
+  s3_action {
+    bucket_name = "${aws_s3_bucket.emails.bucket}"
+    position = 1
+  }
   lambda_action {
     function_arn = "${element(aws_lambda_function.functions.*.arn, index(local.lambda_functions, local.on_email))}"
     invocation_type = "Event"
-    position = 1
+    position = 2
   }
   depends_on = ["aws_s3_bucket_policy.ses", "aws_lambda_permission.ses"]
 }
