@@ -22,13 +22,6 @@ EOF
   ]
 }
 
-data "external" "local_ip" {
-  program = ["sh", "-c", <<EOF
-echo '{"ip":"'$(dig +short @resolver1.opendns.com myip.opendns.com)'"}'
-EOF
-  ]
-}
-
 provider "aws" {
   access_key = var.access_key
   secret_key = var.secret_key
