@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@slack/client": "^4.8.0",
+    "@slack/client": "^4.12.0",
     "html2plaintext": "^2.1.2"
   },
   "devDependencies": {
-    "aws-sdk": "^2.395.0"
+    "aws-sdk": "^2.596.0"
   },
-  "engines": {}
+  "engines": {
+    "node": "^12.14.0"
+  }
 }
