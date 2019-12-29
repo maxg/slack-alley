@@ -26,6 +26,14 @@ Create a DynamoDB item:
       }
     }
 
+For users with non-`user_domain` email addresses on Piazza, create DynamoDB items:
+
+    {
+      "cid": "email",
+      "key": <email-address-on-piazza>,
+      "val": <username>
+    }
+
 
 Development
 -----------
@@ -42,5 +50,16 @@ Deployment
 ----------
 
 In `setup`, create `terraform.tfvars` and `terraform.auto.tfvars` following the examples.
+
+To test `on-email` in the Lambda console, create test events:
+
+    {
+      "Records": [ {
+        "ses": { "mail": { "commonHeaders": {
+          "messageId": "<"<piazza-message-cid>"@piazza.com>",
+          "to": [ <course-number>"@"<slack-alley-domain> ]
+        } } }
+      } ]
+    }
 
 Complete SES domain verification.
