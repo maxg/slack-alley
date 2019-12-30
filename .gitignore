@@ -1,5 +1,4 @@
 /.vagrant/
 /lambda/node_modules
-/out/lambda-*-*.zip
 /setup/.terraform/
 /setup/terraform*.tfvars
