@@ -1,7 +1,8 @@
-variable "app" { default = "slack-alley" }
+variable "bucket" {}
+variable "key" {}
+variable "region" {}
 variable "access_key" {}
 variable "secret_key" {}
-variable "region" {}
 
 variable "domain" {}
 
@@ -12,7 +13,8 @@ terraform {
 }
 
 locals {
-  name = "${var.app}${terraform.workspace == "default" ? "" : "-${terraform.workspace}"}"
+  app = var.key
+  name = "${local.app}${terraform.workspace == "default" ? "" : "-${terraform.workspace}"}"
 }
 
 data "external" "lambda_zip" {
