@@ -51,6 +51,10 @@ Deployment
 
 In `setup`, create `terraform.tfvars` and `terraform.auto.tfvars` following the examples.
 
+In the development VM: in `lambda` run `npm install`, and in `setup` run `pack` to generate the Lambda deployment package.
+
+After Terraform, complete SES domain verification.
+
 To test `on-email` in the Lambda console, create test events:
 
     {
@@ -61,5 +65,3 @@ To test `on-email` in the Lambda console, create test events:
         } } }
       } ]
     }
-
-Complete SES domain verification.
