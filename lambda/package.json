@@ -7,7 +7,7 @@
     "html2plaintext": "^2.1.2"
   },
   "devDependencies": {
-    "aws-sdk": "^2.596.0"
+    "aws-sdk": "^2.814.0"
   },
   "engines": {
     "node": "^12.14.0"
