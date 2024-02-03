@@ -7,7 +7,44 @@ const { DATA_TABLE } = process.env;
 
 const db = new DynamoDB({ params: { TableName: DATA_TABLE } });
 
-const post = (cookie, method, params) => new Promise((resolve, reject) => {
+const get_csrf = () => new Promise((resolve, reject) => {
+  const req = https.request({
+    hostname: 'piazza.com',
+    path: '/main/csrf_token',
+  }, (res) => {
+    const body = [];
+    res.on('data', (chunk) => body.push(chunk));
+    res.on('end', () => {
+      const match = body.join('').match(/CSRF_TOKEN="(.+)"/);
+      if (match) {
+        resolve(match[1]);
+      } else {
+        reject(new Error('failed to get CSRF token'));
+      }
+    });
+  });
+  req.on('error', (err) => reject(err));
+  req.end();
+});
+
+const post_login = (email, password, csrf_token) => new Promise((resolve, reject) => {
+  const req = https.request({
+    hostname: 'piazza.com',
+    path: '/class',
+    method: 'POST',
+    headers: { cookie: `session_id=${csrf_token}` },
+  }, (res) => {
+    if (res.statusCode !== 200) {
+      reject(new Error(`login response code ${res.statusCode}`));
+    } else {
+      resolve({ headers: res.headers });
+    }
+  });
+  req.on('error', (err) => reject(err));
+  req.end(`email=${email}&password=${password}&csrf_token=${csrf_token}`);
+});
+
+const api_post = (cookie, method, params) => new Promise((resolve, reject) => {
   
   const nonce = (+new Date()).toString(36) + 'abcd';
   const csrf = cookie.filter(c => c.startsWith('session_id=')).map(c => c.split('=')[1]).join('');
@@ -38,13 +75,13 @@ const post = (cookie, method, params) => new Promise((resolve, reject) => {
 });
 
 const login = exports.login = (email, password, nid) => {
-  return post([], 'user.login', { email, pass: password }).then(({ headers, data }) => {
+  return get_csrf().then(csrf_token => post_login(email, password, csrf_token)).then(({ headers }) => {
     const cookie = headers['set-cookie'].map((set) => set.split(';')[0]);
     
-    const post_with_cookie = (method, params) => post(cookie, method, params);
+    const post_with_cookie = (method, params) => api_post(cookie, method, params);
     
     return {
-      content: (cid) => post(cookie, 'content.get', { nid, cid }),
+      content: (cid) => api_post(cookie, 'content.get', { nid, cid }),
       to_slack: (content, config) => to_slack(nid, post_with_cookie, content, config),
     };
   });

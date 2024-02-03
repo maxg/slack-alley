@@ -83,7 +83,7 @@ resource "aws_lambda_function" "functions" {
   function_name = "${local.name}-${element(local.lambda_functions, count.index)}"
   filename = data.external.lambda_zip.result.name
   source_code_hash = filebase64sha256(data.external.lambda_zip.result.name)
-  runtime = "nodejs12.x"
+  runtime = "nodejs16.x"
   handler = "${element(local.lambda_functions, count.index)}.handler"
   role = aws_iam_role.lambda.arn
   timeout = 4
