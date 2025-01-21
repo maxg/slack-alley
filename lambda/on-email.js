@@ -39,9 +39,11 @@ const lambda_handler = exports.handler = (event, context, callback) => {
   
   const recipient = notification.mail.commonHeaders.to[0];
   const course = recipient.split('@')[0];
-  const messageID = notification.mail.commonHeaders.messageId;
+  const cid_headers = notification.mail.headers.map(h => {
+    return (h.name === 'References') && h.value.match(/(^<?)([a-z0-9]{12,14})((_\d+)?@piazza.com)/);
+  }).filter(m => m);
   
-  const found = messageID.match(/(^<?)([a-z0-9]{12,14})((_\d+)?@)/);
+  const found = cid_headers.length && cid_headers[0];
   if ( ! found) { return callback(); }
   const updated_cid = found[2];
   
