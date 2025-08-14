@@ -38,7 +38,9 @@ For users with non-`user_domain` email addresses on Piazza, create DynamoDB item
 Development
 -----------
 
-After creating Terraform configs, use `lambda/local` to run locally.
+To run locally:
+
+    node console.ts --domain <slack-alley-domain> --course <course-number> <piazza-message-cid>
 
 See:
 
@@ -51,7 +53,7 @@ Deployment
 
 In `setup`, create `terraform.tfvars` and `terraform.auto.tfvars` following the examples.
 
-In the development VM: in `lambda` run `npm install`, and in `setup` run `pack` to generate the Lambda deployment package.
+In the dev container: in `lambda` run `npm install`, and in `setup` run `pack` to generate the Lambda deployment package.
 
 After Terraform, complete SES domain verification.
 
@@ -59,9 +61,19 @@ To test `on-email` in the Lambda console, create test events:
 
     {
       "Records": [ {
-        "ses": { "mail": { "commonHeaders": {
-          "messageId": "<"<piazza-message-cid>"@piazza.com>",
-          "to": [ <course-number>"@"<slack-alley-domain> ]
-        } } }
+        "ses": { "mail": {
+          "commonHeaders": { "to": [ <course-number>"@"<slack-alley-domain> ] },
+          "headers": [ { "name": "References", "value": "<"<piazza-message-cid>"@piazza.com>" } ]
+        } }
       } ]
     }
+
+Or to send test emails in the SES console, use any *from-address*, appropriate *custom recipient*, and *raw* message:
+
+    To: ...@...
+    References: <...@piazza.com>
+    Subject: notification
+    MIME-Version: 1.0
+    Content-Type: text/plain
+    
+    test

@@ -1,11 +1,13 @@
-const https = require('https');
+import type { IncomingHttpHeaders } from 'node:http';
+import * as https from 'node:https';
 
-const { DynamoDB } = require('aws-sdk');
-const html2plaintext = require('html2plaintext');
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
+import html2plaintext from 'html2plaintext';
+import type { MessageAttachment } from '@slack/web-api';
 
-const { DATA_TABLE } = process.env;
+const { DATA_TABLE: TableName } = process.env;
 
-const db = new DynamoDB({ params: { TableName: DATA_TABLE } });
+const db = new DynamoDB();
 
 const get_csrf = () => new Promise((resolve, reject) => {
   const req = https.request({
@@ -44,7 +46,7 @@ const post_login = (email, password, csrf_token) => new Promise((resolve, reject
   req.end(`email=${email}&password=${password}&csrf_token=${csrf_token}`);
 });
 
-const api_post = (cookie, method, params) => new Promise((resolve, reject) => {
+const api_post = (cookie, method, params) => new Promise<{ headers: IncomingHttpHeaders, data: any }>((resolve, reject) => {
   
   const nonce = (+new Date()).toString(36) + 'abcd';
   const csrf = cookie.filter(c => c.startsWith('session_id=')).map(c => c.split('=')[1]).join('');
@@ -74,7 +76,7 @@ const api_post = (cookie, method, params) => new Promise((resolve, reject) => {
   req.end(JSON.stringify({ method, params }));
 });
 
-const login = exports.login = (email, password, nid) => {
+export const login = (email, password, nid) => {
   return get_csrf().then(csrf_token => post_login(email, password, csrf_token)).then(({ headers }) => {
     const cookie = headers['set-cookie'].map((set) => set.split(';')[0]);
     
@@ -87,16 +89,18 @@ const login = exports.login = (email, password, nid) => {
   });
 };
 
+export type Piazza = Awaited<ReturnType<typeof login>>;
+
 const network_get_authors = (nid, post_with_cookie, ids) => {
   return post_with_cookie('network.get_users', { ids, nid }).then(({ data }) => {
     const users = data.result || [];
     
     const dbkeys = users.map(user => ({ cid: { S: 'email' }, key: { S: user.email } }));
     return db.batchGetItem({
-      RequestItems: { [DATA_TABLE]: { Keys: dbkeys } }
-    }).promise().then((data) => {
+      RequestItems: { [TableName]: { Keys: dbkeys } }
+    }).then((data) => {
       const rewrites = {};
-      data.Responses[DATA_TABLE].forEach(({ key: { S: email }, val: { S: username } }) => {
+      data.Responses[TableName].forEach(({ key: { S: email }, val: { S: username } }) => {
         rewrites[email] = username;
       });
       const users_map = {};
@@ -108,7 +112,7 @@ const network_get_authors = (nid, post_with_cookie, ids) => {
   });
 };
 
-const to_slack = exports.to_slack = (nid, post_with_cookie, content, config) => {
+export const to_slack = (nid, post_with_cookie, content, config): Promise<MessageAttachment[]> => {
   
   const student_answer = content.children.find(c => c.type === 's_answer');
   const instructor_answer = content.children.find(c => c.type === 'i_answer');
@@ -124,17 +128,17 @@ const to_slack = exports.to_slack = (nid, post_with_cookie, content, config) => 
   ].forEach((arr) => arr && arr.forEach((change) => { uids.add(change.uid); }));
   
   return network_get_authors(nid, post_with_cookie, [ ...uids ]).then((users) => {
-    const attachments = [];
+    const attachments: MessageAttachment[] = [];
     // XXX TODO is it a question or a note
     if (content.history.length) {
-      const private = content.status === 'private';
+      const isprivate = content.status === 'private';
       const title = `@${content.nr}: ${_excerpt(content.history[0].subject)}`;
       const text = _excerpt(content.history[0].content);
       const authors = _authors(content.history, users, config.user_info.S);
       const student = users[content.history[0].uid].role === 'student';
       attachments.push({
-        fallback: `${title} ${private ? '[private] ' : ''}(${authors.map(a => a.username).join(', ')})\n${text}`,
-        pretext: `*<https://piazza.com/class/${nid}?cid=${content.nr}|${_escape(title)}>* ${private ? 'ᵖʳⁱᵛᵃᵗᵉ ' : ''}(${authors.map(a => a.link).join(', ')})`,
+        fallback: `${title} ${isprivate ? '[private] ' : ''}(${authors.map(a => a.username).join(', ')})\n${text}`,
+        pretext: `*<https://piazza.com/class/${nid}?cid=${content.nr}|${_escape(title)}>* ${isprivate ? 'ᵖʳⁱᵛᵃᵗᵉ ' : ''}(${authors.map(a => a.link).join(', ')})`,
         color: student ? '#8dc63f' : '#faae40',
         text: _escape(text),
       });

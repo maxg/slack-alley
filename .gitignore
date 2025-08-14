@@ -1,4 +1,4 @@
-/.vagrant/
+/devcontainer.env
 /lambda/node_modules
 /setup/.terraform/
 /setup/terraform*.tfvars

@@ -1,20 +1,22 @@
-variable "bucket" {}
-variable "key" {}
-variable "region" {}
-variable "access_key" {}
-variable "secret_key" {}
+variable "bucket" { type = string }
+variable "key" { type = string }
 
-variable "domain" {}
+variable "allocation" { type = string }
+variable "domain" { type = string }
+
+variable "node_version" { type = string }
+variable "node_options" { type = string }
 
 # terraform init -backend-config=terraform.tfvars
 terraform {
-  required_version = ">= 0.12"
+  required_providers {
+    aws = { source = "hashicorp/aws" }
+  }
   backend "s3" {}
 }
 
 locals {
-  app = var.key
-  name = "${local.app}${terraform.workspace == "default" ? "" : "-${terraform.workspace}"}"
+  name = var.key
 }
 
 data "external" "lambda_zip" {
@@ -25,25 +27,32 @@ EOF
 }
 
 provider "aws" {
-  access_key = var.access_key
-  secret_key = var.secret_key
-  region = var.region
+  default_tags {
+    tags = {
+      Name = local.name
+      terraform = local.name
+      allocation = var.allocation
+    }
+  }
 }
 
 data "aws_caller_identity" "current" {}
 
+data "aws_region" "default" {}
+
 resource "aws_s3_bucket" "emails" {
   bucket = "${local.name}-emails"
-  acl = "private"
-  lifecycle_rule {
-    id = "${local.name}-emails-expiration-rule"
-    enabled = true
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "emails" {
+  bucket = aws_s3_bucket.emails.id
+  rule {
+    id = "${aws_s3_bucket.emails.bucket}-expiration-rule"
+    filter {}
     expiration {
       days = 1
     }
-  }
-  tags = {
-    Terraform = local.name
+    status = "Enabled"
   }
 }
 
@@ -68,9 +77,6 @@ resource "aws_dynamodb_table" "data" {
     name = "key"
     type = "S"
   }
-  tags = {
-    Terraform = local.name
-  }
 }
 
 locals {
@@ -83,7 +89,7 @@ resource "aws_lambda_function" "functions" {
   function_name = "${local.name}-${element(local.lambda_functions, count.index)}"
   filename = data.external.lambda_zip.result.name
   source_code_hash = filebase64sha256(data.external.lambda_zip.result.name)
-  runtime = "nodejs16.x"
+  runtime = "nodejs${split(".", var.node_version)[0]}.x"
   handler = "${element(local.lambda_functions, count.index)}.handler"
   role = aws_iam_role.lambda.arn
   timeout = 4
@@ -91,11 +97,9 @@ resource "aws_lambda_function" "functions" {
   depends_on = [aws_iam_role_policy.lambda]
   environment {
     variables = {
+      NODE_OPTIONS = var.node_options
       DATA_TABLE = aws_dynamodb_table.data.name
     }
-  }
-  tags = {
-    Terraform = local.name
   }
 }
 
@@ -171,7 +175,7 @@ resource "aws_iam_role" "lambda" {
 data "aws_iam_policy_document" "lambda" {
   statement {
     actions = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
-    resources = ["arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:*"]
+    resources = ["arn:aws:logs:${data.aws_region.default.region}:${data.aws_caller_identity.current.account_id}:*"]
   }
   statement {
     actions = ["dynamodb:*"]
@@ -189,9 +193,6 @@ resource "aws_cloudwatch_log_group" "logs" {
   count = length(local.lambda_functions)
   name = "/aws/lambda/${aws_lambda_function.functions[count.index].function_name}"
   retention_in_days = 1
-  tags = {
-    Terraform = local.name
-  }
 }
 
 output "ses-domain-verification" {
